@@ -1,45 +1,64 @@
-import React from "react";
-import { Link, useLoaderData } from "react-router-dom";
+import React, { useEffect, useRef } from "react";
+import { Form, Link, useLoaderData, useNavigation } from "react-router-dom";
 import PostItem from "./PostItem";
+import { getUsers } from "./api/users";
+import { getPosts } from "./api/posts";
+import FormGroup from "./FormGroup";
 
-export default function Posts() {
-  const posts = useLoaderData();
+function Posts() {
+  const {
+    posts,
+    users,
+    searchParams: { query, userId },
+  } = useLoaderData();
 
+  const { state } = useNavigation();
+
+  const queryRef = useRef();
+  const userRef = useRef();
+  useEffect(() => {
+    queryRef.current.value = query;
+    userRef.current.value = userId || "";
+  }, [query, userId]);
   return (
     <>
       <h1 className="page-title">
         Posts
         <div className="title-btns">
-          <a className="btn btn-outline" href="/posts/new">
+          <Link className="btn btn-outline" to="/posts/new">
             New
-          </a>
+          </Link>
         </div>
       </h1>
-      <form method="get" action="/posts" className="form mb-4">
+      <Form className="form mb-4">
         <div className="form-row">
-          <div className="form-group">
+          <FormGroup>
             <label htmlFor="query">Query</label>
-            <input type="search" name="query" id="query" />
-          </div>
-          <div className="form-group">
+            <input type="search" name="query" id="query" ref={queryRef} />
+          </FormGroup>
+          <FormGroup>
             <label htmlFor="userId">Author</label>
-            <select type="search" name="userId" id="userId">
+            <select
+              type="search"
+              name="userId"
+              id="userId"
+              ref={userRef}
+              // defaultValue={userId || ""}
+            >
               <option value="">Any</option>
-              <option value="1">Leanne Graham</option>
-              <option value="2">Ervin Howell</option>
-              <option value="3">Clementine Bauch</option>
-              <option value="4">Patricia Lebsack</option>
-              <option value="5">Chelsey Dietrich</option>
-              <option value="6">Mrs. Dennis Schulist</option>
-              <option value="7">Kurtis Weissnat</option>
-              <option value="8">Nicholas Runolfsdottir V</option>
-              <option value="9">Glenna Reichert</option>
-              <option value="10">Clementina DuBuque</option>
+              {users.map((user) => (
+                <option value={user.id} key={user.id}>
+                  {user.name}
+                  {/* {user.company.name} */}
+                </option>
+              ))}
             </select>
-          </div>
-          <button className="btn">Filter</button>
+          </FormGroup>
+          <button className="btn" disabled={state === "submitting"}>
+            Filter
+          </button>
         </div>
-      </form>
+      </Form>
 
       <div className="card-grid">
         {posts.map((post) => (
@@ -48,4 +67,18 @@ export default function Posts() {
       </div>
     </>
   );
+}
+
+async function loader({ request: { signal, url } }) {
+  const searchParams = new URL(url).searchParams;
+  const query = searchParams.get("query");
+  const userId = searchParams.get("userId");
+
+  const posts = await getPosts({ signal }, { query, userId });
+  const users = await getUsers({ signal });
+  return { posts, users, searchParams: { query, userId } };
+}
+
+export default function postsRoute() {
+  return { loader, element: <Posts /> };
 }

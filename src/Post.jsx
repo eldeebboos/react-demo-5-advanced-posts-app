@@ -3,6 +3,7 @@ import { Link, useLoaderData } from "react-router-dom";
 
 export default function Post() {
   const post = useLoaderData();
+console.log(post);
 
   return (
     <>

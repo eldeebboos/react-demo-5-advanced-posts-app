@@ -1,58 +1,31 @@
 import React from "react";
-import { Form, Link, redirect, useLoaderData } from "react-router-dom";
+import {
+  Form,
+  Link,
+  redirect,
+  useActionData,
+  useLoaderData,
+  useNavigation,
+} from "react-router-dom";
 import { createPost } from "./api/posts";
 import { getUsers, getUser } from "./api/users";
+import PostForm, { validatePost } from "./PostForm";
 function PostNew() {
   const users = useLoaderData();
+  const { state } = useNavigation();
+
+  const errors = useActionData();
 
   return (
     <>
       <h1 className="page-title">New Post</h1>
-      <Form method="post" className="form">
-        <div className="form-row">
-          <div className="form-group error">
-            <label htmlFor="title">Title</label>
-            <input type="text" name="title" id="title" />
-            <div className="error-message">Required</div>
-          </div>
-          <div className="form-group">
-            <label htmlFor="userId">Author</label>
-            <select name="userId" id="userId">
-              {users.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="body">Body</label>
-            <textarea name="body" id="body"></textarea>
-          </div>
-        </div>
-        <div className="form-row form-btn-row">
-          <Link className="btn btn-outline" to="..">
-            Cancel
-          </Link>
-          <button className="btn">Save</button>
-        </div>
-      </Form>
+      <PostForm
+        isSubmitting={state === "submitting"}
+        users={users}
+        errors={errors}
+      />
     </>
   );
-}
-
-async function validatePost(post) {
-  if (!post.title) {
-    return "Title is required";
-  }
-  if (!post.body) {
-    return "Body is required";
-  }
-  if (!post.userId) {
-    return "User ID is required";
-  }
 }
 
 async function loader({ request: { signal } }) {
@@ -66,13 +39,11 @@ async function action({ request }) {
     userId: formData.get("userId"),
     body: formData.get("body"),
   };
-  const error = await validatePost(newPost);
-  if (error) {
+  const error = validatePost(newPost);
+  if (Object.keys(error).length > 0) {
     return error;
   }
-  if (newPost.userId === "") {
-    return "User ID is required";
-  }
+
   const response = await createPost(newPost);
   return redirect("/posts");
 }

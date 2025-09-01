@@ -17,9 +17,10 @@ import TodoNew from "./todo-new";
 import PostNew from "./PostNew";
 import postNewRoute from "./PostNew";
 import postEditRoute from "./PostEdit";
+import postsRoute from "./Posts";
 
 // const API_URL = "https://jsonplaceholder.typicode.com/";
-const API_URL = "http://127.0.0.1:3000";
+const API_URL = "http://localhost:3000";
 
 export const router = createBrowserRouter([
   {
@@ -41,12 +42,7 @@ export const router = createBrowserRouter([
             children: [
               {
                 index: true,
-                loader: async ({ request: { signal } }) => {
-                  const response = await fetch(`${API_URL}/posts`, { signal });
-                  if (response.status === 200) return await response.json();
-                  throw redirect("/");
-                },
-                element: <Posts />,
+                ...postsRoute()
               },
               {
                 path: ":postId",
@@ -58,6 +54,7 @@ export const router = createBrowserRouter([
                       signal,
                     }
                   );
+                  console.log(response);
                   if (response.status === 200) return await response.json();
                   throw redirect(".");
                 },
